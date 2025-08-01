@@ -43,8 +43,8 @@ export default function Home() {
     }
   };
 
-  const handleReplace = (id: string, file: File) => {
-    const url = URL.createObjectURL(file);
+  // Ora handleReplace accetta una stringa URL (cloud)
+  const handleReplace = (id: string, url: string) => {
     setBoxes(boxes => boxes.map(b => b.id === id ? { ...b, audioUrl: url } : b));
   };
 
@@ -84,7 +84,7 @@ export default function Home() {
               title={box.title}
               audioUrl={box.audioUrl}
               onDelete={() => handleDelete(box.id)}
-              onReplace={file => handleReplace(box.id, file)}
+              onReplace={url => handleReplace(box.id, url)}
               onTitleChange={title => handleTitleChange(box.id, title)}
             />
           ))}

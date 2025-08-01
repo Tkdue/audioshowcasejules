@@ -6,7 +6,7 @@ interface AudioCardProps {
   title: string;
   audioUrl: string;
   onDelete: () => void;
-  onReplace: (file: File) => void;
+  onReplace: (url: string) => void;
   onTitleChange: (title: string) => void;
 }
 
@@ -18,11 +18,28 @@ const AudioCard: React.FC<AudioCardProps> = ({ title, audioUrl, onDelete, onRepl
   const inputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+
+  async function uploadToVercelBlob(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      alert('Errore upload: ' + (await res.text()));
+      return null;
+    }
+    const data = await res.json();
+    return data.url;
+  }
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onReplace(e.dataTransfer.files[0]);
+      const url = await uploadToVercelBlob(e.dataTransfer.files[0]);
+      if (url) onReplace(url);
     }
   };
 
@@ -36,11 +53,14 @@ const AudioCard: React.FC<AudioCardProps> = ({ title, audioUrl, onDelete, onRepl
     setDragActive(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onReplace(e.target.files[0]);
+      const url = await uploadToVercelBlob(e.target.files[0]);
+      if (url) onReplace(url);
     }
   };
+
+  // onReplaceUrl non più necessario, ora onReplace accetta direttamente l'url
 
   const handleTitleBlur = () => {
     setEditing(false);
@@ -52,48 +72,58 @@ const AudioCard: React.FC<AudioCardProps> = ({ title, audioUrl, onDelete, onRepl
   };
 
   return (
-    <div className={`rounded-card bg-frost shadow-card hover:shadow-cardHover transition-shadow flex flex-col p-6 gap-4 justify-between h-64 relative ${dragActive ? 'ring-2 ring-primary-yellow' : ''}`}
+    <div
+      className={`rounded-card bg-[#10182A] border border-[#232C43] shadow-lg hover:shadow-2xl transition-shadow flex flex-col p-6 gap-4 justify-between min-h-64 relative ${dragActive ? 'ring-2 ring-primary-yellow' : ''}`}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-2">
         {editing ? (
           <input
             ref={titleInputRef}
-            className="text-obsidian text-h3 font-medium truncate bg-transparent border-b border-primary-yellow focus:outline-none focus:border-primary-yellowAccent w-full"
+            className="text-white text-xl font-bold bg-transparent border-b border-primary-yellow focus:outline-none focus:border-primary-yellowAccent w-full px-1"
             value={tempTitle}
             onChange={e => setTempTitle(e.target.value)}
             onBlur={handleTitleBlur}
             onKeyDown={e => {
-              if (e.key === 'Enter') {
-                titleInputRef.current?.blur();
-              }
+              if (e.key === 'Enter') titleInputRef.current?.blur();
             }}
             autoFocus
           />
         ) : (
           <div
-            className="text-obsidian text-h3 font-medium truncate cursor-pointer"
+            className="text-white text-xl font-bold truncate cursor-pointer"
             title={title}
             onClick={() => setEditing(true)}
           >
             {title}
           </div>
         )}
-        <button
-          className="ml-2 p-1 rounded hover:bg-red-100 text-red-600"
-          aria-label="Elimina box"
-          onClick={onDelete}
-        >
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-trash"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M9 10v6M15 10v6"/><path d="M10 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/></svg>
-        </button>
+        <div className="flex gap-2 ml-2">
+          <button
+            className="p-1 rounded hover:bg-[#232C43] text-primary-yellow"
+            aria-label="Modifica titolo"
+            onClick={() => setEditing(true)}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </button>
+          <button
+            className="p-1 rounded hover:bg-[#232C43] text-red-500"
+            aria-label="Elimina box"
+            onClick={onDelete}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="14" height="11" rx="2"/><path d="M8 10v4M12 10v4"/><path d="M9 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
       </div>
-      <AudioBoxPlayer src={audioUrl} />
+      <div className="flex-1 flex flex-col justify-center">
+        <AudioBoxPlayer src={audioUrl} />
+      </div>
       <div
-        className={`mt-2 flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-card cursor-pointer transition-colors ${dragActive ? 'border-primary-yellow bg-yellow-50' : 'border-gray bg-white/40'}`}
+        className={`mt-2 flex flex-col items-center justify-center border-2 border-dashed rounded-card cursor-pointer transition-colors w-full py-4 ${dragActive ? 'border-primary-yellow bg-yellow-50/10' : 'border-[#232C43] bg-[#151E33]'}`}
         onClick={() => inputRef.current?.click()}
-        style={{ minHeight: 56 }}
+        style={{ minHeight: 80 }}
       >
         <input
           ref={inputRef}
@@ -102,7 +132,9 @@ const AudioCard: React.FC<AudioCardProps> = ({ title, audioUrl, onDelete, onRepl
           className="hidden"
           onChange={handleFileChange}
         />
-        <span className="text-gray text-sm select-none">Trascina qui un file audio o clicca per sostituire</span>
+        <svg width="32" height="32" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2"><path d="M16 4v16m0 0l-6-6m6 6l6-6"/><rect x="4" y="20" width="24" height="4" rx="2"/></svg>
+        <span className="text-primary-yellow font-semibold text-base select-none"><span className="underline">Click to upload</span> or drag and drop</span>
+        <span className="text-gray text-xs mt-1">MP3 or WAV (Max 2MB)</span>
       </div>
     </div>
   );
