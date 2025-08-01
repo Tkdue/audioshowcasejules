@@ -1,0 +1,33 @@
+
+
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Product+Sans:wght@400;500;700&display=swap');
+
+html {
+  font-family: 'Google Sans', 'Product Sans', system-ui, sans-serif;
+  background: linear-gradient(135deg, #212121 0%, #23243a 100%);
+  color: #F8F9FA;
+
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #23243a 0%, #212121 100%);
+  color: #F8F9FA;
+  font-family: 'Google Sans', 'Product Sans', system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+.dark {
+  background: linear-gradient(135deg, #181a20 0%, #23243a 100%);
+  color: #F8F9FA;
+}
+
+/* Scrollbar minimal */
+::-webkit-scrollbar {
+  width: 8px;
+  background: #23243a;
+}
+::-webkit-scrollbar-thumb {
+  background: #3F51B5;
+  border-radius: 8px;
+}
+}
